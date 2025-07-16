@@ -1,0 +1,181 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model blogs {
+  id         Int       @id @default(autoincrement())
+  title      String    @db.VarChar(255)
+  content    String
+  author     String    @db.VarChar(100)
+  created_at DateTime? @default(now()) @db.Timestamp(6)
+  updated_at DateTime? @default(now()) @db.Timestamp(6)
+
+  @@index([author], map: "idx_blogs_author")
+  @@index([created_at], map: "idx_blogs_created_at")
+}
+
+// Agent表 
+model agents {
+  id                  Int          @id @default(autoincrement()) // 主键ID，使用UUID
+  agentName           String // agent名称
+  agentType           AgentType // agent类型：浏览器使用、虚拟机
+  agentPayType        AgentPayType // 支付类型：免费、按次收费、人类雇佣模式
+  agentAddress        String // agent执行任务的地址
+  description         String // agent描述
+  authorBio           String // 作者简介
+  agentCategory       Int // 分类ID
+  agentClassification String // 分类名称
+  tags                String[] // 标签数组
+  isPrivate           Boolean      @default(false) // 是否私有
+  autoAcceptJobs      Boolean      @default(false) // 是否自动接单
+  isActive            Boolean      @default(true) // 是否激活
+  reputation          Float // 信誉评分
+  successRate         Float // 成功率
+  totalJobsCompleted  Int          @default(0) // 已完成任务总数
+
+  createdAt DateTime @default(now()) // 创建时间
+  createdBy String // 创建者
+  updatedAt DateTime @updatedAt // 更新时间
+  updatedBy String? // 更新者，可选
+  isDeleted Boolean  @default(false) // 软删除标记
+
+  contractType  ContractType // 合约类型：基于结果或基于算法
+  walletAddress String // agent作者钱包地址
+
+  // 按次收费agent特有字段
+  pricePerNumber Float? // 每次执行价格（仅按次收费类型）
+  minPrice       Float? // 最低价格（仅按次收费类型）
+  maxPrice       Float? // 最高价格（仅按次收费类型）
+
+  // 人类雇佣模式特有字段
+  monthlySalary    Float? // 月薪（仅人类雇佣模式）
+  bonus            Float? // 月奖金（仅人类雇佣模式）
+  expectedDuration Int? // 期望工作时长（月）（仅人类雇佣模式）
+
+  jobDistributionAgents jobDistributionAgents[]
+}
+
+// Agent类型枚举
+enum AgentType {
+  TEXT_GENERATION @map("text-generation") // 文本生成
+  BROWSER_USE     @map("browser-use") // 浏览器使用
+  VIRTUAL_MACHINE @map("virtual-machine") // 虚拟机
+}
+
+// Agent支付类型枚举
+enum AgentPayType {
+  FREE               @map("free") // 免费任务（需要押金）
+  PAY_PER_TASK       @map("pay_per_task") // 按次付费
+  HUMAN_BASED_HIRING @map("human_based_hiring") // 人工雇佣模式（固定月薪+奖金）
+}
+
+// 合约类型枚举
+enum ContractType {
+  RESULT    @map("result") // 基于结果的合约
+  ALGORITHM @map("algorithm") // 基于算法的合约
+}
+
+model agentCategories {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  icon        String   @db.VarChar(255) // 分类图标
+  description String   @db.VarChar(255)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  isDeleted   Boolean  @default(false)
+}
+
+// 任务表：记录所有类型的任务信息
+model jobs {
+  id            Int         @id @default(autoincrement()) // 主键ID，使用UUID
+  jobTitle      String // 任务标题
+  category      String // 任务分类
+  description   String // 任务详细描述
+  paymentType   PaymentType // 支付类型：免费任务、按次付费、人工雇佣模式、基于结果付费
+  deadline      DateTime // 任务截止日期
+  priority      Priority // 任务优先级：低、中、高、紧急
+  deliverables  String // 可交付成果要求描述
+  skillLevel    SkillLevel // 技能要求等级：初级、中级、高级、专家
+  autoAssign    Boolean     @default(false) // 是否自动接单
+  allowBidding  Boolean     @default(false) // 是否允许竞标，开启则只选一个agent并付款，否则均分给所有agent
+  escrowEnabled Boolean     @default(false) // 是否启用资金托管，开启则到期退款加利息，否则仅退款
+  walletAddress String // 创建者钱包地址
+  isPublic      Boolean     @default(true) // 是否公开任务
+  status        JobStatus // 任务状态：开放、进行中、已完成、已过期、已取消
+  createdAt     DateTime    @default(now()) // 创建时间，自动设置
+  createdBy     String // 创建者
+  updatedBy     String? // 更新者，可选
+  updatedAt     DateTime    @updatedAt // 更新时间，自动更新
+  isDeleted     Boolean     @default(false) // 软删除标记
+  budget        Float? // 预算/押金：免费任务时为押金，按次付费时为最低预算
+  maxBudget     Float? // 最高预算：仅在按次付费(Pay Per Task)模式下使用
+}
+
+// 支付类型枚举
+enum PaymentType {
+  FREE_JOBS          @map("Free Jobs") // 免费任务（需要押金）
+  PAY_PER_TASK       @map("Pay Per Task") // 按次付费
+  HUMAN_BASED_HIRING @map("Hunman-Based Hiring Model") // 人工雇佣模式（固定月薪+奖金）
+  OUTCOME_BASED      @map("Outcome-based Payment") // 基于结果的支付（无需人工）
+}
+
+// 优先级枚举
+enum Priority {
+  LOW // 低优先级
+  MEDIUM // 中优先级
+  HIGH // 高优先级
+  URGENT // 紧急
+}
+
+// 技能等级枚举
+enum SkillLevel {
+  BEGINNER // 初级
+  INTERMEDIATE // 中级
+  ADVANCED // 高级
+  EXPERT // 专家
+}
+
+// 任务状态枚举
+enum JobStatus {
+  OPEN // 开放中
+  IN_PROGRESS @map("In Progress") // 进行中
+  COMPLETED // 已完成
+  EXPIRED // 已过期
+  CANCELLED // 已取消
+}
+
+model jobDistributionRecords {
+  id                    Int                     @id @default(autoincrement())
+  jobId                 Int // 任务ID
+  jobName               String // 任务名称,快照
+  matchCriteria         Json // 匹配标准 {tags: string[], category: string, skillLevel: string}
+  totalAgents           Int // 总agent数
+  assignedCount         Int // 已分配agent数
+  responseCount         Int // 已响应agent数
+  assignedAgentId       Int // 已分配agentId
+  assignedAgentName     String // 已分配agent名称,快照
+  createdAt             DateTime                @default(now())
+  createdBy             String // 创建者
+  updatedAt             DateTime                @updatedAt
+  updatedBy             String? // 更新者
+  isDeleted             Boolean                 @default(false)
+  jobDistributionAgents jobDistributionAgents[]
+}
+
+model jobDistributionAgents {
+  id                Int                     @id @default(autoincrement())
+  jobDistributionId Int // 任务分配表id
+  agentId           Int // agent表id
+  assignedAt        DateTime                @default(now())
+  createdAt         DateTime                @default(now())
+  updatedAt         DateTime                @updatedAt
+  isDeleted         Boolean                 @default(false)
+  agent             agents?                 @relation(fields: [agentId], references: [id])
+  jobDistribution   jobDistributionRecords? @relation(fields: [jobDistributionId], references: [id])
+}
