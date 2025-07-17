@@ -1,0 +1,18 @@
+# ide
+.idea
+.vscode
+.history
+
+# node
+node_modules
+dist
+
+# logs
+logs
+*.log
+
+# env
+.env
+
+# other
+.DS_Store

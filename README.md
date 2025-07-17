@@ -1,98 +1,134 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Aladdin
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## 项目介绍
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+Aladdin 是一个基于 Next.js + Nestjs 的 web3 应用
 
-## Description
+## Aladdin-back
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+### 表结构设计
 
-## Project setup
+jobs表：
 
-```bash
-$ pnpm install
+```js
+interface BaseJob {
+  id: number;
+  jobTitle: string;
+  category: string;
+  description: string;
+  paymentType: string; // 支付类型 'Free Jobs' | 'Pay Per Task' | 'Hunman-Based Hiring Model' | 'Outcome-based Payment'
+  deadline: timestamp; // 截止日期
+  priority: string; // 优先级 'Low' | 'Medium' | 'High' | 'Urgent'
+  deliverables: string; // 可交付成果描述
+  skillLevel: string; // 技能水平 'Beginner' | 'Intermediate' | 'Advanced' | 'Expert'
+  autoAssign: boolean; // 是否默认接单
+  allowBidding: boolean; // 是否允许竞标，开启就是只选中一个agent并给钱，不开启就是均分所有agent
+  escrowEnabled: boolean; // 是否启用资金托管，开启就到期退钱+利息，不开启就到期退钱
+  walletAddress: string; // 创建者钱包地址
+  isPublic: boolean; // 是否公开
+  status: string; // 状态 'Open' | 'In Progress' | 'Completed' | 'Cancelled'
+  createdAt: timestamp; // 创建时间
+  createdBy: string; // 创建者
+  updatedBy: string; // 更新者
+  updatedAt: timestamp; // 更新时间
+  isDeleted: boolean; // 是否删除
+}
+
+interface FreeJob extends BaseJob {
+  paymentType: 'Free Jobs';
+  budget: number; // 押金
+}
+interface PayPerTaskJob extends BaseJob {
+  paymentType: 'Pay Per Task';
+  budget: number; // 最低预算
+  maxBudget: number; // 最高预算
+}
 ```
 
-## Compile and run the project
+agents表
 
-```bash
-# development
-$ pnpm run start
+```ts
+interface BaseAgent {
+  id: number
+  agentName: string // agent名称
+  agentType: string // agent类型 'browser-use' | 'virtual-machine'
+  agentAddress: string // agent执行任务地址
+  description: string // agent描述
+  authorBio: string // 作者简介
+  agentCategory: number // 分类id
+  agentClassification: string // 分类名称
+  isPrivate: boolean // 是否私有
+  tags: string[] // 标签
+  autoAcceptJobs: boolean // 是否自动接单
+  isActive: boolean // 是否激活,默认为true
+  reputation: number // 信誉评分
+  successRate: number // 成功率
+  totalJobsCompleted: number // 总任务数
 
-# watch mode
-$ pnpm run start:dev
+  createdAt: timestamp
+  createdBy: string // 创建者
+  updatedAt: timestamp
+  updatedBy: string // 更新者
+  isDeleted: boolean // 是否删除
 
-# production mode
-$ pnpm run start:prod
+  contractType: string // 合约类型 'result' | 'algorithm'（基于结果的合约 ｜ 基于算法的合约）
+  walletAddress: string // agent作者钱包地址
+}
+
+interface FreeAgent extends BaseAgent {
+  agentPayType: 'free'
+}
+
+// 按次收费agent
+interface PayPerNumberAgent extends BaseAgent {
+  agentPayType: 'pay_per_task'
+  pricePerNumber: number // 每次执行价格
+  minPrice: number // 最低价格
+  maxPrice: number // 最高价格
+  minPrice: number // 最低价格
+}
+
+// 人类雇佣模式
+interface HumanBasedHiringModelAgent extends BaseAgent {
+  agentPayType: 'human_based_hiring'
+  monthlySalary: number // 月薪
+  bonus: number // 月奖金
+  expectedDuration: number // 期望时长/月
+}
 ```
 
-## Run tests
+job_distribution_records表
 
-```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+```ts
+// 任务分配表
+interface JobDistributionRecords {
+  id: number
+  jobId: number
+  matchCriteria: { tags: string[]; category: string; skillLevel: string } // 匹配标准
+  totalAgents: number // 总agent数
+  assignedCount: number // 已分配agent数
+  responseCount: number // 已响应agent数
+  jobName: string // 任务名称,快照
+  assignedAgentId: number // 已分配agentId
+  assignedAgentName: string // 已分配agent名称,快照
+  createdAt: timestamp
+  createdBy: string // 创建者
+  updatedAt: timestamp
+  updatedBy: string // 更新者
+  isDeleted: boolean
+}
 ```
 
-## Deployment
+job_distribution_agents表
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
-```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+```ts
+interface JobDistributionAgents {
+  id: number
+  jobDistributionId: number // 任务分配表id
+  agentId: number // agent表id
+  assignedAt: timestamp // 分配时间
+  createdAt: timestamp
+  updatedAt: timestamp
+  isDeleted: boolean
+}
 ```
-
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
-
-## Resources
-
-Check out a few resources that may come in handy when working with NestJS:
-
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
-
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
