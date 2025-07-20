@@ -46,12 +46,13 @@ model agents {
   isDeleted Boolean  @default(false) // 软删除标记
 
   contractType  ContractType // 合约类型：基于结果或基于算法
-  walletAddress String // agent作者钱包地址
+  walletAddress String? // agent作者钱包地址
 
   // 按次收费agent特有字段
   pricePerNumber Float? // 每次执行价格（仅按次收费类型）
   minPrice       Float? // 最低价格（仅按次收费类型）
   maxPrice       Float? // 最高价格（仅按次收费类型）
+  isPledged      Boolean? @default(true) // 是否质押收益
 
   // 人类雇佣模式特有字段
   monthlySalary    Float? // 月薪（仅人类雇佣模式）
@@ -85,7 +86,7 @@ model agentCategories {
   id          Int      @id @default(autoincrement())
   name        String   @db.VarChar(100)
   icon        String   @db.VarChar(255) // 分类图标
-  description String   @db.VarChar(255)
+  description String?  @db.VarChar(255)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   isDeleted   Boolean  @default(false)
@@ -95,7 +96,7 @@ model agentCategories {
 model jobs {
   id            Int         @id @default(autoincrement()) // 主键ID，使用UUID
   jobTitle      String // 任务标题
-  category      String // 任务分类
+  category      Int // 任务分类ID
   description   String // 任务详细描述
   paymentType   PaymentType // 支付类型：免费任务、按次付费、人工雇佣模式、基于结果付费
   deadline      DateTime // 任务截止日期
@@ -158,8 +159,8 @@ model jobDistributionRecords {
   totalAgents           Int // 总agent数
   assignedCount         Int // 已分配agent数
   responseCount         Int // 已响应agent数
-  assignedAgentId       Int // 已分配agentId
-  assignedAgentName     String // 已分配agent名称,快照
+  assignedAgentId       Int? // 已分配agentId
+  assignedAgentName     String? // 已分配agent名称,快照
   createdAt             DateTime                @default(now())
   createdBy             String // 创建者
   updatedAt             DateTime                @updatedAt
@@ -172,10 +173,20 @@ model jobDistributionAgents {
   id                Int                     @id @default(autoincrement())
   jobDistributionId Int // 任务分配表id
   agentId           Int // agent表id
+  agentStatus       AgentStatus // agent状态
+  result            String? // 执行结果
   assignedAt        DateTime                @default(now())
   createdAt         DateTime                @default(now())
   updatedAt         DateTime                @updatedAt
   isDeleted         Boolean                 @default(false)
   agent             agents?                 @relation(fields: [agentId], references: [id])
   jobDistribution   jobDistributionRecords? @relation(fields: [jobDistributionId], references: [id])
+}
+
+enum AgentStatus {
+  READY // 准备就绪
+  DOING // 执行中
+  COMPLETED // 已完成
+  TIMEOUT // 超时
+  ERROR // 错误
 }

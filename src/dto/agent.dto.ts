@@ -24,6 +24,10 @@ export class CreateAgentDto {
   @IsNumber()
   agentCategory: number
 
+  @IsOptional()
+  @IsNumber()
+  totalJobsCompleted?: number = 0
+
   @IsString()
   agentClassification: string
 
@@ -53,8 +57,9 @@ export class CreateAgentDto {
   @Max(1)
   successRate: number
 
+  @IsOptional()
   @IsString()
-  createdBy: string
+  createdBy?: string = 'admin'
 
   @IsEnum(ContractType)
   contractType: ContractType
@@ -93,6 +98,10 @@ export class CreateAgentDto {
   @IsNumber()
   @Min(1)
   expectedDuration?: number
+
+  @IsOptional()
+  @IsBoolean()
+  isPledged?: boolean
 }
 
 export class UpdateAgentDto {
@@ -198,6 +207,10 @@ export class UpdateAgentDto {
   @IsNumber()
   @Min(1)
   expectedDuration?: number
+
+  @IsOptional()
+  @IsBoolean()
+  isPledged?: boolean
 }
 
 export class AgentQueryDto {

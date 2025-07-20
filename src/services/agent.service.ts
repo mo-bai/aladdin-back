@@ -12,7 +12,8 @@ export class AgentService {
       const agent = await this.databaseService.client.agents.create({
         data: {
           ...createAgentDto,
-          totalJobsCompleted: 0,
+          createdBy: createAgentDto.createdBy || 'admin',
+          totalJobsCompleted: createAgentDto.totalJobsCompleted || 0,
         },
       })
       return agent

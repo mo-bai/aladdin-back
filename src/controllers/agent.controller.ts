@@ -7,7 +7,17 @@ export class AgentController {
   constructor(private readonly agentService: AgentService) {}
 
   @Post('create')
-  async create(@Body(ValidationPipe) createAgentDto: CreateAgentDto) {
+  async create(
+    @Body(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      })
+    )
+    createAgentDto: CreateAgentDto
+  ) {
+    console.log('createAgentDto', createAgentDto)
     return {
       code: HttpStatus.CREATED,
       message: 'Agent创建成功',
@@ -36,7 +46,17 @@ export class AgentController {
 
   @Post('update/:id')
   @HttpCode(HttpStatus.OK)
-  async update(@Param('id', ParseIntPipe) id: number, @Body(ValidationPipe) updateAgentDto: UpdateAgentDto) {
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      })
+    )
+    updateAgentDto: UpdateAgentDto
+  ) {
     return {
       code: HttpStatus.OK,
       message: 'Agent更新成功',

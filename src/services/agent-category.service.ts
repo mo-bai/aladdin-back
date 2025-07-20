@@ -14,6 +14,7 @@ export class AgentCategoryService {
       })
       return category
     } catch (error) {
+      console.log('error', error)
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
         if (error.code === 'P2002') {
           throw new BadRequestException('分类名称已存在')

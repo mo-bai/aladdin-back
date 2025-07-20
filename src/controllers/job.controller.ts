@@ -8,7 +8,16 @@ export class JobController {
   constructor(private readonly jobService: JobService) {}
 
   @Post('create')
-  async create(@Body(ValidationPipe) createJobDto: CreateJobDto) {
+  async create(
+    @Body(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      })
+    )
+    createJobDto: CreateJobDto
+  ) {
     return {
       code: HttpStatus.CREATED,
       message: '任务创建成功',
@@ -37,7 +46,17 @@ export class JobController {
 
   @Post('update/:id')
   @HttpCode(HttpStatus.OK)
-  async update(@Param('id', ParseIntPipe) id: number, @Body(ValidationPipe) updateJobDto: UpdateJobDto) {
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body(
+      new ValidationPipe({
+        whitelist: true,
+        forbidNonWhitelisted: true,
+        transform: true,
+      })
+    )
+    updateJobDto: UpdateJobDto
+  ) {
     return {
       code: HttpStatus.OK,
       message: '任务更新成功',
@@ -72,6 +91,24 @@ export class JobController {
       code: HttpStatus.OK,
       message: '任务状态更新成功',
       data: await this.jobService.updateStatus(id, body.status),
+    }
+  }
+  @Get('distribute/:id')
+  async distribute(@Param('id', ParseIntPipe) id: number) {
+    return {
+      code: HttpStatus.OK,
+      message: '获取任务详情成功',
+      data: await this.jobService.findDistribute(id),
+    }
+  }
+
+  @Post('judge-result/:id')
+  async judgeResult(@Param('id', ParseIntPipe) id: number, @Body() body: { agentId: number; agentName: string }) {
+    const { agentId, agentName } = body
+    return {
+      code: HttpStatus.OK,
+      message: '任务结果判断成功',
+      data: await this.jobService.judgeResult(id, agentId, agentName),
     }
   }
 }

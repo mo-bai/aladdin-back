@@ -2,20 +2,27 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { DatabaseService } from './database.service'
 import { CreateJobDto, UpdateJobDto, JobQueryDto } from '../dto/job.dto'
 import { jobs, Prisma, JobStatus } from '@prisma/client'
+import { DistributeService } from './distribute.service'
 
 @Injectable()
 export class JobService {
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(
+    private readonly databaseService: DatabaseService,
+    private readonly distributeService: DistributeService
+  ) {}
 
   async create(createJobDto: CreateJobDto): Promise<jobs> {
     try {
       const job = await this.databaseService.client.jobs.create({
         data: {
           ...createJobDto,
+          createdBy: createJobDto.createdBy || 'admin',
           deadline: new Date(createJobDto.deadline),
           status: JobStatus.OPEN,
         },
       })
+      // todo:创建任务后，加入任务队列
+      void this.distributeService.create(job.id)
       return job
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError) {
@@ -32,11 +39,7 @@ export class JobService {
     const where: Prisma.jobsWhereInput = {
       isDeleted: false,
       ...(search && {
-        OR: [
-          { jobTitle: { contains: search, mode: 'insensitive' } },
-          { description: { contains: search, mode: 'insensitive' } },
-          { category: { contains: search, mode: 'insensitive' } },
-        ],
+        OR: [{ jobTitle: { contains: search, mode: 'insensitive' } }, { description: { contains: search, mode: 'insensitive' } }],
       }),
       ...(category && { category }),
       ...(paymentType && { paymentType }),
@@ -149,5 +152,52 @@ export class JobService {
         updatedAt: new Date(),
       },
     })
+  }
+
+  async findDistribute(id: number) {
+    const job = await this.findOne(id)
+    if (!job) {
+      throw new NotFoundException(`Job with ID ${id} not found`)
+    }
+    const record = await this.databaseService.client.jobDistributionRecords.findFirst({
+      where: { jobId: id }, // 或者 where: { id: recordId }
+      include: {
+        jobDistributionAgents: {
+          include: {
+            agent: true, // 这里 agent 是 jobDistributionAgents 里的外键关联
+          },
+        },
+      },
+    })
+    return {
+      record,
+      job,
+    }
+  }
+  async judgeResult(id: number, agentId: number, agentName: string) {
+    const job = await this.findOne(id)
+    if (!job) {
+      throw new NotFoundException(`Job with ID ${id} not found`)
+    }
+    console.log('锁定获取任务奖励的 agent')
+    const record = await this.databaseService.client.jobDistributionRecords.findFirst({
+      where: {
+        jobId: id,
+      },
+    })
+    if (!record) {
+      console.log('分配记录不存在')
+      return
+    }
+    await this.databaseService.client.jobDistributionRecords.update({
+      where: {
+        id: record.id,
+      },
+      data: {
+        assignedAgentId: agentId,
+        assignedAgentName: agentName,
+      },
+    })
+    console.log('分配记录更新成功')
   }
 }

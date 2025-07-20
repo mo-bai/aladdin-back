@@ -1,4 +1,4 @@
-import { IsString, IsBoolean, IsNumber, IsEnum, IsOptional, IsDateString, Min, IsArray, ArrayMinSize } from 'class-validator'
+import { IsString, IsBoolean, IsNumber, IsEnum, IsOptional, Min, IsArray, ArrayMinSize, IsDateString } from 'class-validator'
 import { Transform } from 'class-transformer'
 import { PaymentType, Priority, SkillLevel, JobStatus } from '@prisma/client'
 
@@ -6,8 +6,8 @@ export class CreateJobDto {
   @IsString()
   jobTitle: string
 
-  @IsString()
-  category: string
+  @IsNumber()
+  category: number
 
   @IsString()
   description: string
@@ -46,8 +46,13 @@ export class CreateJobDto {
   @IsBoolean()
   isPublic?: boolean
 
+  @IsOptional()
+  @IsEnum(JobStatus)
+  status?: JobStatus
+
+  @IsOptional()
   @IsString()
-  createdBy: string
+  createdBy?: string = 'admin'
 
   @IsOptional()
   @IsNumber()
@@ -66,8 +71,8 @@ export class UpdateJobDto {
   jobTitle?: string
 
   @IsOptional()
-  @IsString()
-  category?: string
+  @IsNumber()
+  category?: number
 
   @IsOptional()
   @IsString()
@@ -148,8 +153,8 @@ export class JobQueryDto {
   search?: string
 
   @IsOptional()
-  @IsString()
-  category?: string
+  @IsNumber()
+  category?: number
 
   @IsOptional()
   @IsEnum(PaymentType)

@@ -4,6 +4,7 @@ import { DatabaseModule } from './modules/database.module'
 import { AgentModule } from './modules/agent.module'
 import { JobModule } from './modules/job.module'
 import { BlogModule } from './modules/blog.module'
+import { DistributeModule } from './modules/distribute.module'
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { BlogModule } from './modules/blog.module'
     AgentModule,
     JobModule,
     BlogModule,
+    DistributeModule,
   ],
   controllers: [],
   providers: [],

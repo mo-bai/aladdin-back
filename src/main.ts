@@ -3,6 +3,7 @@ import { AppModule } from './app.module'
 import { ValidationPipe } from '@nestjs/common'
 import { AllExceptionsFilter } from './common/filters/http-exception.filter'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
+import { DistributeService } from './services/distribute.service'
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule)
@@ -40,6 +41,9 @@ async function bootstrap() {
 
   const port = process.env.PORT ?? 3002
   await app.listen(port)
+
+  const distributeService = app.get(DistributeService)
+  await distributeService.init()
 
   console.log(`🚀 应用已启动`)
   console.log(`📖 API 文档地址: http://localhost:${port}/swagger`)
