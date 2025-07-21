@@ -1,11 +1,13 @@
 import { Module } from '@nestjs/common'
 import { JobService } from '../services/job.service'
 import { JobController } from '../controllers/job.controller'
-import { DistributeService } from 'src/services/distribute.service'
+import { DistributeModule } from './distribute.module'
+import { DatabaseModule } from './database.module'
 
 @Module({
+  imports: [DistributeModule, DatabaseModule],
   controllers: [JobController],
-  providers: [JobService, DistributeService],
+  providers: [JobService],
   exports: [JobService],
 })
 export class JobModule {}

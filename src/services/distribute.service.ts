@@ -16,10 +16,11 @@ type AgentResponse = {
 @Injectable()
 export class DistributeService {
   private queue: Job[]
-  constructor(private readonly databaseService: DatabaseService) {}
+  constructor(private readonly databaseService: DatabaseService) {
+    this.queue = []
+  }
 
   async init() {
-    this.queue = []
     try {
       console.log('查询jobs')
       const jobs = await this.databaseService.client.jobs.findMany({
@@ -78,6 +79,10 @@ export class DistributeService {
       return
     }
     console.log(`找到${agents.length}个符合要求的agent`)
+    if (agents.length == 0) {
+      console.log('没有符合要求的agent')
+      return
+    }
     const allowBidding = job.allowBidding
     if (allowBidding) {
       console.log('job 是绑定一个agent 模式')
